@@ -13,9 +13,10 @@
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
         .card { background: #111; padding: 10px; border-radius: 15px; border: 1px solid #333; cursor: pointer; }
         .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; }
-        #admin-panel { display: none; background: #111; padding: 20px; border-radius: 20px; border: 2px solid var(--accent); }
+        #admin-panel { display: none; background: #111; padding: 20px; border-radius: 20px; border: 2px solid var(--accent); margin-bottom: 20px; }
         #secret-trigger { position: fixed; bottom: 0; left: 0; width: 50px; height: 50px; z-index: 9999; cursor: pointer; }
         .download-btn { background: var(--accent); padding: 15px; text-align: center; border-radius: 10px; cursor: pointer; display: inline-block; width: 200px; }
+        footer { border-top: 1px solid #333; margin-top: 50px; padding: 20px; font-size: 0.8em; color: #888; text-align: center; }
     </style>
 </head>
 <body>
@@ -43,6 +44,13 @@
         <p id="d-desc"></p>
         <div id="d-link" class="download-btn">تحميل المود</div>
     </div>
+
+    <footer>
+        <h3>شروط الاستخدام وإخلاء المسؤولية</h3>
+        <p>جميع المودات والسيارات المعروضة في هذا الموقع ليست من تطويري أو ملكيتي الشخصية، أنا أقوم فقط بنشر وتوفير روابط الوصول لهذه الملفات كما هي دون أي تعديل.</p>
+        <p>الموقع لا يتحمل أي مسؤولية قانونية أو تقنية ناتجة عن استخدام هذه الملفات؛ تحميلك واستخدامك للمودات يكون على مسؤوليتك الشخصية بالكامل.</p>
+        <p>جميع الحقوق محفوظة لأصحابها الأصليين.</p>
+    </footer>
 
     <div id="secret-trigger" onclick="checkSecret()"></div>
 
