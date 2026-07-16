@@ -27,7 +27,7 @@
         <input type="text" id="img1" placeholder="رابط الصورة" style="width:100%; padding:8px; margin:5px 0;">
         <input type="text" id="link" placeholder="رابط التحميل" style="width:100%; padding:8px; margin:5px 0;">
         <textarea id="desc" placeholder="المواصفات" style="width:100%; height:60px;"></textarea>
-        <button onclick="saveCar()" style="background:var(--accent); padding:10px; color:white; border:none;">حفظ السحابة</button>
+        <button onclick="saveCar()" style="background:var(--accent); padding:10px; color:white; border:none; cursor:pointer;">حفظ السحابة</button>
         <div id="admin-list" style="margin-top:15px;"></div>
     </div>
 
@@ -55,11 +55,13 @@
             projectId: "beamarab-e40e8"
         }));
 
-        let clickCount = 0;
+        // مخزن مؤقت للسيارات لتجاوز مشكلة المسافات
+        let allCars = {};
+
         window.checkSecret = () => {
-            if(++clickCount >= 10 && prompt("كلمة المرور:") === "97477429") {
+            if(prompt("كلمة المرور:") === "97477429") {
                 document.getElementById('admin-panel').style.display = 'block';
-                loadAdminList(); clickCount = 0;
+                loadAdminList();
             }
         };
 
@@ -70,11 +72,12 @@
             location.reload();
         };
 
-        window.showDetails = (name, img, link, desc) => {
-            document.getElementById('d-name').innerText = name;
-            document.getElementById('d-img').src = img;
-            document.getElementById('d-desc').innerText = desc;
-            document.getElementById('d-link').onclick = () => window.open(link, '_blank');
+        window.showDetails = (id) => {
+            const c = allCars[id];
+            document.getElementById('d-name').innerText = c.name;
+            document.getElementById('d-img').src = c.img;
+            document.getElementById('d-desc').innerText = c.desc;
+            document.getElementById('d-link').onclick = () => window.open(c.link, '_blank');
             showPage('details-page');
         };
 
@@ -88,7 +91,8 @@
             const grid = document.getElementById('cars-grid');
             snap.forEach((d) => {
                 const c = d.data();
-                grid.innerHTML += `<div class="card" onclick="showDetails('${c.name}', '${c.img}', '${c.link}', '${c.desc}')">
+                allCars[d.id] = c; // تخزين السيارة في المخزن
+                grid.innerHTML += `<div class="card" onclick="showDetails('${d.id}')">
                     <img src="${c.img}"><h3>${c.name}</h3></div>`;
             });
         }
