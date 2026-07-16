@@ -27,7 +27,7 @@
         <input type="text" id="img1" placeholder="رابط الصورة" style="width:100%; padding:8px; margin:5px 0;">
         <input type="text" id="link" placeholder="رابط التحميل" style="width:100%; padding:8px; margin:5px 0;">
         <textarea id="desc" placeholder="المواصفات" style="width:100%; height:60px;"></textarea>
-        <button onclick="saveCar()" style="background:var(--accent); padding:10px; color:white; border:none; cursor:pointer;">حفظ السحابة</button>
+        <button onclick="saveCar()" style="background:var(--accent); padding:10px; color:white; border:none; cursor:pointer;">حفظ / تحديث</button>
         <div id="admin-list" style="margin-top:15px;"></div>
     </div>
 
@@ -55,13 +55,17 @@
             projectId: "beamarab-e40e8"
         }));
 
-        // مخزن مؤقت للسيارات لتجاوز مشكلة المسافات
         let allCars = {};
+        let clickCount = 0;
 
         window.checkSecret = () => {
-            if(prompt("كلمة المرور:") === "97477429") {
-                document.getElementById('admin-panel').style.display = 'block';
-                loadAdminList();
+            clickCount++;
+            if(clickCount >= 10) {
+                if(prompt("كلمة المرور:") === "97477429") {
+                    document.getElementById('admin-panel').style.display = 'block';
+                    loadAdminList();
+                    clickCount = 0;
+                }
             }
         };
 
@@ -70,6 +74,22 @@
             const car = { name: document.getElementById('name').value, img: document.getElementById('img1').value, link: document.getElementById('link').value, desc: document.getElementById('desc').value };
             if (id) await updateDoc(doc(db, "cars", id), car); else await addDoc(collection(db, "cars"), car);
             location.reload();
+        };
+
+        window.deleteCar = async (id) => {
+            if(confirm("هل تريد حذف هذه السيارة نهائياً؟")) {
+                await deleteDoc(doc(db, "cars", id));
+                location.reload();
+            }
+        };
+
+        window.editCar = (id) => {
+            const c = allCars[id];
+            document.getElementById('edit-id').value = id;
+            document.getElementById('name').value = c.name;
+            document.getElementById('img1').value = c.img;
+            document.getElementById('link').value = c.link;
+            document.getElementById('desc').value = c.desc;
         };
 
         window.showDetails = (id) => {
@@ -91,7 +111,7 @@
             const grid = document.getElementById('cars-grid');
             snap.forEach((d) => {
                 const c = d.data();
-                allCars[d.id] = c; // تخزين السيارة في المخزن
+                allCars[d.id] = c;
                 grid.innerHTML += `<div class="card" onclick="showDetails('${d.id}')">
                     <img src="${c.img}"><h3>${c.name}</h3></div>`;
             });
@@ -102,9 +122,9 @@
             document.getElementById('admin-list').innerHTML = "";
             snap.forEach((d) => {
                 const c = d.data();
-                document.getElementById('admin-list').innerHTML += `<div style="padding:5px;">${c.name} 
-                    <button onclick="document.getElementById('edit-id').value='${d.id}'; document.getElementById('name').value='${c.name}';">تعديل</button>
-                    <button onclick="deleteDoc(doc(db,'cars','${d.id}')); location.reload();">حذف</button></div>`;
+                document.getElementById('admin-list').innerHTML += `<div style="background:#222; padding:5px; margin:5px;">${c.name} 
+                    <button onclick="editCar('${d.id}')">تعديل</button>
+                    <button onclick="deleteCar('${d.id}')" style="background:red;">حذف</button></div>`;
             });
         }
         loadCars();
