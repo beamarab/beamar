@@ -30,26 +30,21 @@
 
     <div id="admin-panel">
         <div style="display:flex; justify-content:space-between;">
-            <h2 id="admin-title">إضافة سيارة جديدة</h2>
+            <h2 id="admin-title">إضافة سيارة جديدة (سحابي)</h2>
             <button onclick="document.getElementById('admin-panel').style.display='none'">إغلاق</button>
         </div>
-        <input type="hidden" id="edit-index" value="-1">
         <input type="text" id="name" placeholder="اسم السيارة" style="width:100%; padding:8px; margin:5px 0;">
         <input type="text" id="img1" placeholder="رابط الصورة 1" style="width:100%; padding:8px; margin:5px 0;">
         <input type="text" id="img2" placeholder="رابط الصورة 2" style="width:100%; padding:8px; margin:5px 0;">
         <input type="text" id="img3" placeholder="رابط الصورة 3" style="width:100%; padding:8px; margin:5px 0;">
         <input type="text" id="link" placeholder="رابط التحميل" style="width:100%; padding:8px; margin:5px 0;">
         <textarea id="desc" placeholder="المواصفات" style="width:100%; height:60px;"></textarea>
-        <button id="save-btn" onclick="saveCar()" style="width:100%; background:var(--accent); padding:10px; border:none; color:white;">حفظ السيارة</button>
-        <div id="admin-list" style="margin-top:15px;"></div>
+        <button id="save-btn" onclick="saveCarToCloud()" style="width:100%; background:var(--accent); padding:10px; border:none; color:white; cursor:pointer;">حفظ في السحابة</button>
     </div>
 
     <div id="home-page" class="page active">
         <div class="hero"><h1>BEAMNG MODS</h1></div>
-        <div class="main-wrapper">
-            <div class="content"><div class="grid" id="cars-grid"></div></div>
-            <div class="sidebar" id="ad-sidebar"></div>
-        </div>
+        <div class="main-wrapper"><div class="content"><div class="grid" id="cars-grid"></div></div></div>
     </div>
 
     <div id="details-page" class="page">
@@ -68,10 +63,9 @@
 
     <div id="secret-trigger" onclick="checkSecret()"></div>
 
-    <!-- Firebase SDK (للمزامنة السحابية) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCo1v5Ov-mmn25lpe6P3inS5AMGlcOfA24",
@@ -85,42 +79,37 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // جلب البيانات من السحابة وتحديثها في المتصفح
-        async function syncData() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "cars"));
-                let cloudCars = [];
-                querySnapshot.forEach((doc) => cloudCars.push(doc.data()));
-                if(cloudCars.length > 0) {
-                    localStorage.setItem('myCars', JSON.stringify(cloudCars));
-                    loadCars(); 
-                }
-            } catch(e) { console.log("جاري التحديث..."); }
+        // حفظ السيارة في Firebase
+        window.saveCarToCloud = async () => {
+            const car = {
+                name: document.getElementById('name').value,
+                imgs: [document.getElementById('img1').value, document.getElementById('img2').value, document.getElementById('img3').value],
+                link: document.getElementById('link').value,
+                desc: document.getElementById('desc').value
+            };
+            await addDoc(collection(db, "cars"), car);
+            alert("تم الحفظ في السحابة بنجاح!");
+            location.reload();
+        };
+
+        // جلب السيارات وعرضها
+        async function loadCars() {
+            const querySnapshot = await getDocs(collection(db, "cars"));
+            let cars = [];
+            querySnapshot.forEach((doc) => cars.push(doc.data()));
+            localStorage.setItem('myCars', JSON.stringify(cars));
+            document.getElementById('cars-grid').innerHTML = cars.map((c, i) => `<div class="card" onclick="showDetails(${i})"><img src="${c.imgs[0]}"><h3>${c.name}</h3></div>`).join('');
         }
-        syncData();
+        loadCars();
     </script>
 
     <script>
-        let currentImg = 0; let clickCount = 0; const AD_DIRECT_LINK = "";
+        let currentImg = 0; let clickCount = 0;
         function moveImg(dir) { document.getElementById('img-' + currentImg).classList.remove('active-img'); currentImg = (currentImg + dir + 3) % 3; document.getElementById('img-' + currentImg).classList.add('active-img'); }
-        function checkSecret() { clickCount++; if(clickCount >= 10) { if(prompt("كلمة المرور:") === "97477429") { document.getElementById('admin-panel').style.display = 'block'; loadAdminList(); clickCount = 0; } } }
-        function saveCar() {
-            let cars = JSON.parse(localStorage.getItem('myCars')) || [];
-            let index = document.getElementById('edit-index').value;
-            let car = { name: document.getElementById('name').value, imgs: [document.getElementById('img1').value, document.getElementById('img2').value, document.getElementById('img3').value], link: document.getElementById('link').value, desc: document.getElementById('desc').value };
-            if(index == -1) cars.push(car); else cars[index] = car;
-            localStorage.setItem('myCars', JSON.stringify(cars));
-            loadCars(); loadAdminList(); clearInputs();
-        }
-        function editCar(i) { let cars = JSON.parse(localStorage.getItem('myCars')); document.getElementById('name').value = cars[i].name; document.getElementById('img1').value = cars[i].imgs[0]; document.getElementById('img2').value = cars[i].imgs[1]; document.getElementById('img3').value = cars[i].imgs[2]; document.getElementById('link').value = cars[i].link; document.getElementById('desc').value = cars[i].desc; document.getElementById('edit-index').value = i; document.getElementById('admin-title').innerText = "تعديل السيارة"; }
-        function deleteCar(i) { if(confirm("هل تريد الحذف؟")) { let cars = JSON.parse(localStorage.getItem('myCars')); cars.splice(i, 1); localStorage.setItem('myCars', JSON.stringify(cars)); loadCars(); loadAdminList(); } }
-        function clearInputs() { document.getElementById('name').value=''; document.getElementById('img1').value=''; document.getElementById('img2').value=''; document.getElementById('img3').value=''; document.getElementById('link').value=''; document.getElementById('desc').value=''; document.getElementById('edit-index').value=-1; document.getElementById('admin-title').innerText="إضافة سيارة جديدة"; }
-        function loadAdminList() { let cars = JSON.parse(localStorage.getItem('myCars')) || []; document.getElementById('admin-list').innerHTML = cars.map((c, i) => `<div style="background:#222; padding:8px; margin:5px; display:flex; justify-content:space-between;">${c.name} <div><button onclick="editCar(${i})">تعديل</button><button onclick="deleteCar(${i})" style="background:red;">حذف</button></div></div>`).join(''); }
+        function checkSecret() { clickCount++; if(clickCount >= 10) { if(prompt("كلمة المرور:") === "97477429") { document.getElementById('admin-panel').style.display = 'block'; clickCount = 0; } } }
         function showDetails(i) { let cars = JSON.parse(localStorage.getItem('myCars')); let c = cars[i]; currentImg = 0; document.getElementById('d-name').innerText = c.name; document.getElementById('d-desc').innerText = c.desc; document.getElementById('img-0').src = c.imgs[0]; document.getElementById('img-1').src = c.imgs[1]; document.getElementById('img-2').src = c.imgs[2]; let input = document.createElement('input'); input.id = 'd-link-hidden'; input.type = 'hidden'; input.value = c.link; document.body.appendChild(input); showPage('details-page'); }
         function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); }
-        function loadCars() { let cars = JSON.parse(localStorage.getItem('myCars')) || []; document.getElementById('cars-grid').innerHTML = cars.map((c, i) => `<div class="card" onclick="showDetails(${i})"><img src="${c.imgs[0]}"><h3>${c.name}</h3></div>`).join(''); }
-        function handleDownload() { if(AD_DIRECT_LINK) window.open(AD_DIRECT_LINK, '_blank'); window.location.href = document.getElementById('d-link-hidden').value; }
-        loadCars();
+        function handleDownload() { window.location.href = document.getElementById('d-link-hidden').value; }
     </script>
 </body>
 </html>
